@@ -66,6 +66,12 @@ function love.load()
 	Player.rotationDrag = 0.93
 	Player.rotationLowerLimit = 0.5
 	Player.degreeLock = 7.5 * math.pi / 180
+
+	--font!
+	love.graphics.setNewFont("fonts/Audimat Mono Regular.ttf", 16)
+
+	--line width!
+	love.graphics.setLineWidth(2)
 end
 
 function love.update(dt)
@@ -86,7 +92,7 @@ function love.update(dt)
 
 	-- Player movement input
 	if love.keyboard.isDown('w') then
-		Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) - math.pi/2, Player.forwardThrust, dt)
+		--Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) - math.pi/2, Player.forwardThrust, dt)
 	elseif love.keyboard.isDown('s') then
 		Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) + math.pi/2, Player.reverseThrust, dt)
 	end
@@ -120,6 +126,28 @@ function love.update(dt)
 end
 
 function love.draw()
+	-- Ship draw
+	love.graphics.setColor(255, 255, 255)
 	love.graphics.draw(Player.image, Player.x - Player.imgHalfWidth, Player.y - Player.imgHalfHeight, Player.currentRotation - (Player.currentRotation % Player.degreeLock), Player.imgScale, Player.imgScale, Player.imgHalfWidth, Player.imgHalfHeight)
+
+	-- Shield draw
 	--love.graphics.draw(Player.shieldhit, Player.x - Player.shieldHalfWidth, Player.y - Player.shieldHalfHeight, Player.currentRotation - (Player.currentRotation % Player.degreeLock), Player.shieldScale, Player.shieldScale, Player.shieldHalfWidth, Player.shieldHalfHeight)
+
+	-- Thruster draws
+	if love.keyboard.isDown('w') then
+		--https://www.dropbox.com/s/9kdnaldhmnu2kge/SpaceLoveDemo.zip?dl=0
+		local thrusterOffsetHorizontal = -20
+		local thrusterOffsetVertical = -8
+		local thrusterLength = 3
+		local thrusterColor = {160, 250, 255}
+		love.graphics.setColor(thrusterColor)
+		love.graphics.line(Player.x + thrusterOffsetHorizontal, Player.y + Player.imgHalfHeight + thrusterOffsetVertical, Player.x + thrusterOffsetHorizontal, Player.y + Player.imgHalfHeight + thrusterOffsetVertical + thrusterLength)
+	end
+
+	-- Fuel UI draw
+	love.graphics.setColor(175, 255, 255)
+	love.graphics.print("FUEL", 3, love.graphics.getHeight() - 30)
+	love.graphics.rectangle("line", 3, love.graphics.getHeight() - 13, 125, 10)
+	love.graphics.setColor(175, 255, 25) --change to be based on fuel amount
+	love.graphics.rectangle("fill", 4, love.graphics.getHeight() - 12, 120, 8) --max width is 123
 end
