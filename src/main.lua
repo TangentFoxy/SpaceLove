@@ -1,147 +1,181 @@
-local Player = {
-	image = nil,
-	shieldhit = nil,
-	imgHalfWidth = nil,
-	imgHalfHeight = nil,
-	x = nil,
-	y = nil,
-	v = {
-		x = nil, y = nil,
-	},
-	currentRotation = nil,
-	rotationSpeed = nil,
-	rotationImpulse = nil,
-	rotationDrag = nil,
-	rotationLowerLimit = nil,
-	degreeLock = nil,
-	forwardThrust = nil,
-	reverseThrust = nil,
-	sideThrust = nil,
-	maximumSpeed = nil,
-	accelerate = nil,
+local player
+local Render = {
+	jitter = false,
+	jitterLevel = 2,
 }
 
-function Player.accelerate(direction, amount, dt)
-	-- apply acceleration
-	Player.v.x = Player.v.x + amount * math.cos(direction) * dt
-	Player.v.y = Player.v.y + amount * math.sin(direction) * dt
+--very very temporary
+console = {
+	e = function() end,
+	d = function() end
+}
 
-	-- check if above maximum speed
-	local magnitude = math.sqrt(Player.v.x * Player.v.x + Player.v.y * Player.v.y)
-	if magnitude > Player.maximumSpeed then
-		Player.accelerate(math.tan(Player.v.y, Player.v.x) + math.pi, magnitude - Player.maximumSpeed, dt)
-	end
-end
+-- Classes
+local Player = require "player"
+local Ship = require "Ship"
+local Hull = require "Hull"
+local Shield = require "Shield"
+local Engine = require "Engine"
+local Thruster = require "Thruster"
 
 function love.load()
-	--position and speed
-	Player.x = love.graphics.getWidth() / 2
-	Player.y = love.graphics.getHeight() / 2
-	Player.v.x = 0
-	Player.v.y = 0
-	Player.currentRotation = 0
-	Player.rotationSpeed = 0
-
-	--image
-	Player.image = love.graphics.newImage("images/fighter1.png")
-	Player.imgHalfWidth = Player.image:getWidth() / 2
-	Player.imgHalfHeight = Player.image:getHeight() / 2
-	Player.imgScale = 1.5
-	--shieldhit image
-	Player.shieldhit = love.graphics.newImage("images/shieldhit1.png")
-	Player.shieldHalfWidth = Player.shieldhit:getWidth() / 2
-	Player.shieldHalfHeight = Player.shieldhit:getHeight() / 2
-	Player.shieldScale = 1.6
-
-	--engine
-	Player.forwardThrust = 2600
-	Player.reverseThrust = 1300
-	Player.sideThrust = 800
-	Player.spaceDrag = 0.95
-	Player.speedLowerLimit = 20
-	Player.maximumSpeed = 40000
-
-	--maneuverability
-	Player.rotationImpulse = 33
-	Player.rotationDrag = 0.93
-	Player.rotationLowerLimit = 0.5
-	Player.degreeLock = 7.5 * math.pi / 180
+	-- Create the player
+	player = Player(Ship(
+		Hull("images/fighter1.png", 1.5),
+		Shield("images/shieldhit1.png", 1.6),
+		Engine(40000, 0.95, 10, 7.5, 33, 0.93, 0.5,
+			{
+				Thruster(0, "rotateleft", 4.4, -16, {250, 200, 200}, 0.4),
+				Thruster(0, "rotateleft", -11, 14.3, {255, 230, 230}, 0.6),
+				Thruster(0, "rotateleft", 13, 11, {250, 200, 200}, 0.6),
+				Thruster(0, "rotateright", -4.8, -16, {250, 200, 200}, 0.4),
+				Thruster(0, "rotateright", 10.4, 14.3, {255, 230, 230}, 0.6),
+				Thruster(0, "rotateright", -13.6, 11, {250, 200, 200}, 0.6),
+			}),
+		{
+			Thruster(1300, "forward", -8.5, 16.5, {160, 250, 255}, 2.4),
+			Thruster(1300, "forward", 8.5, 16.5, {160, 250, 255}, 2.4),
+			Thruster(650, "backward", -13, 1.8, {200, 240, 255}, 1.8),
+			Thruster(650, "backward", 13, 1.8, {200, 240, 255}, 1.8),
+			Thruster(320, "left", 6, -4.4, {220, 230, 250}, 0.6),
+			Thruster(540, "left", 17.5, 5.5, {220, 230, 250}, 1.2),
+			Thruster(320, "right", -6, -4.4, {220, 230, 250}, 0.6),
+			Thruster(540, "right", -17.5, 5.5, {220, 230, 250}, 1.2),
+		},
+		{
+			x = love.graphics.getWidth() / 2,
+			y = love.graphics.getHeight() / 2,
+			v = {
+				x = 0,
+				y = 0
+			},
+			currentRotation = 0,
+			rotationSpeed = 0
+		}
+	))
 
 	--font!
 	love.graphics.setNewFont("fonts/Audimat Mono Regular.ttf", 16)
-
 	--line width!
 	love.graphics.setLineWidth(2)
 end
 
 function love.update(dt)
-	-- Player rotation input
+	-- player rotation input
 	if love.keyboard.isDown('q') or love.keyboard.isDown('a') then
-		Player.rotationSpeed = Player.rotationSpeed - Player.rotationImpulse * dt
+		player.Ship.rotationSpeed = player.Ship.rotationSpeed - player.Ship.Engine.rotationImpulse * dt
 	elseif love.keyboard.isDown('e') or love.keyboard.isDown('d') then
-		Player.rotationSpeed = Player.rotationSpeed + Player.rotationImpulse * dt
+		player.Ship.rotationSpeed = player.Ship.rotationSpeed + player.Ship.Engine.rotationImpulse * dt
 	end
 
-	-- Player rotationSpeed adjustment
-	Player.rotationSpeed = Player.rotationSpeed * Player.rotationDrag
-	if Player.rotationSpeed < Player.rotationLowerLimit and Player.rotationSpeed > 0 then Player.rotationSpeed = 0 end
-	if Player.rotationSpeed > -Player.rotationLowerLimit and Player.rotationSpeed < 0 then Player.rotationSpeed = 0 end
+	-- player rotationSpeed adjustment
+	player.Ship.rotationSpeed = player.Ship.rotationSpeed * player.Ship.Engine.rotationDrag
+	if player.Ship.rotationSpeed < player.Ship.Engine.rotationLowerLimit and player.Ship.rotationSpeed > 0 then player.Ship.rotationSpeed = 0 end
+	if player.Ship.rotationSpeed > -player.Ship.Engine.rotationLowerLimit and player.Ship.rotationSpeed < 0 then player.Ship.rotationSpeed = 0 end
 
-	-- Player currentRotation applied
-	Player.currentRotation = Player.currentRotation + Player.rotationSpeed * dt
+	-- player currentRotation applied
+	player.Ship.currentRotation = player.Ship.currentRotation + player.Ship.rotationSpeed * dt
 
-	-- Player movement input
+	-- player movement input
 	if love.keyboard.isDown('w') then
-		--Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) - math.pi/2, Player.forwardThrust, dt)
+		player.Ship:accelerate("forward", dt)
 	elseif love.keyboard.isDown('s') then
-		Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) + math.pi/2, Player.reverseThrust, dt)
+		player.Ship:accelerate("backward", dt)
 	end
 	if love.keyboard.isDown('j') then
-		Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock) - math.pi, Player.sideThrust, dt)
+		player.Ship:accelerate("left", dt)
 	elseif love.keyboard.isDown('l') then
-		Player.accelerate(Player.currentRotation - (Player.currentRotation % Player.degreeLock), Player.sideThrust, dt)
+		player.Ship:accelerate("right", dt)
 	end
 
-	-- Player current speed adjustment
-	Player.v.x = Player.v.x * Player.spaceDrag
-	Player.v.y = Player.v.y * Player.spaceDrag
-	local speed = math.sqrt(Player.v.x * Player.v.x + Player.v.y * Player.v.y)
-	--Player.accelerate(math.tan(Player.v.y, Player.v.x) + math.pi, speed * Player.spaceDrag, dt)
+	-- player current speed adjustment
+	player.Ship.v.x = player.Ship.v.x * player.Ship.Engine.spaceDrag
+	player.Ship.v.y = player.Ship.v.y * player.Ship.Engine.spaceDrag
+	local speed = math.sqrt(player.Ship.v.x * player.Ship.v.x + player.Ship.v.y * player.Ship.v.y)
+	--player.accelerate(math.tan(player.v.y, player.v.x) + math.pi, speed * player.spaceDrag, dt)
 	--[[
-	if Player.v.x < Player.speedLowerLimit and Player.v.x > 0 then Player.v.x = 0 end
-	if Player.v.x > -Player.speedLowerLimit and Player.v.x < 0 then Player.v.x = 0 end
-	if Player.v.y < Player.speedLowerLimit and Player.v.y > 0 then Player.v.y = 0 end
-	if Player.v.y > -Player.speedLowerLimit and Player.v.y < 0 then Player.v.y = 0 end
+	if player.v.x < player.speedLowerLimit and player.v.x > 0 then player.v.x = 0 end
+	if player.v.x > -player.speedLowerLimit and player.v.x < 0 then player.v.x = 0 end
+	if player.v.y < player.speedLowerLimit and player.v.y > 0 then player.v.y = 0 end
+	if player.v.y > -player.speedLowerLimit and player.v.y < 0 then player.v.y = 0 end
 	--]]
-	if speed < Player.speedLowerLimit then
-		Player.accelerate(math.tan(Player.v.y, Player.v.x) + math.pi, speed, dt)
+	if speed < player.Ship.Engine.speedLowerLimit then
+		--player.accelerate(math.tan(player.v.y, player.v.x) + math.pi, speed, dt)
+		player.Ship.v.x = 0
+		player.Ship.v.y = 0
 	end
 
-	-- Player current speed applied
-	Player.x = Player.x + Player.v.x * dt
-	Player.y = Player.y + Player.v.y * dt
+	-- player current speed applied
+	player.Ship.x = player.Ship.x + player.Ship.v.x * dt
+	player.Ship.y = player.Ship.y + player.Ship.v.y * dt
 
 	-- emergency exit
 	if love.keyboard.isDown('escape') then love.event.quit() end
 end
 
 function love.draw()
+	-- FPS in title
+	--change this to be a line displayed on screen
+	love.window.setTitle("FPS: "..love.timer.getFPS())
+
+	-- Red Lines for debug purposes
+	---[[
+	love.graphics.setColor(255, 0, 0)
+	love.graphics.line(love.graphics.getWidth() / 2, 0, love.graphics.getWidth() / 2, love.graphics.getHeight())
+	love.graphics.line(0, love.graphics.getHeight() / 2, love.graphics.getWidth(), love.graphics.getHeight() / 2)
+	--]]
+
 	-- Ship draw
 	love.graphics.setColor(255, 255, 255)
-	love.graphics.draw(Player.image, Player.x - Player.imgHalfWidth, Player.y - Player.imgHalfHeight, Player.currentRotation - (Player.currentRotation % Player.degreeLock), Player.imgScale, Player.imgScale, Player.imgHalfWidth, Player.imgHalfHeight)
+	if Render.jitter then
+		love.graphics.draw(player.Ship.Hull.image, player.Ship.x - (player.Ship.x % Render.jitterLevel), player.Ship.y - (player.Ship.y % Render.jitterLevel), player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
+	else
+		love.graphics.draw(player.Ship.Hull.image, player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
+	end
 
 	-- Shield draw
-	--love.graphics.draw(Player.shieldhit, Player.x - Player.shieldHalfWidth, Player.y - Player.shieldHalfHeight, Player.currentRotation - (Player.currentRotation % Player.degreeLock), Player.shieldScale, Player.shieldScale, Player.shieldHalfWidth, Player.shieldHalfHeight)
+	-- below is not correct, update for new system, should look like ship draw except Shield instead of Hull
+	--love.graphics.draw(player.shieldhit, player.x - player.shieldHalfWidth, player.y - player.shieldHalfHeight, player.currentRotation - (player.currentRotation % player.degreeLock), player.shieldScale, player.shieldScale, player.shieldHalfWidth, player.shieldHalfHeight)
 
 	-- Thruster draws
 	if love.keyboard.isDown('w') then
-		--https://www.dropbox.com/s/9kdnaldhmnu2kge/SpaceLoveDemo.zip?dl=0
-		local thrusterOffsetHorizontal = -20
-		local thrusterOffsetVertical = -8
-		local thrusterLength = 3
-		local thrusterColor = {160, 250, 255}
-		love.graphics.setColor(thrusterColor)
-		love.graphics.line(Player.x + thrusterOffsetHorizontal, Player.y + Player.imgHalfHeight + thrusterOffsetVertical, Player.x + thrusterOffsetHorizontal, Player.y + Player.imgHalfHeight + thrusterOffsetVertical + thrusterLength)
+		for i=1,#player.Ship.Thrusters do
+			if player.Ship.Thrusters[i].direction == "forward" then
+				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
+	elseif love.keyboard.isDown('s') then
+		for i=1,#player.Ship.Thrusters do
+			if player.Ship.Thrusters[i].direction == "backward" then
+				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
+	end
+	if love.keyboard.isDown('j') then
+		for i=1,#player.Ship.Thrusters do
+			if player.Ship.Thrusters[i].direction == "left" then
+				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
+	elseif love.keyboard.isDown('l') then
+		for i=1,#player.Ship.Thrusters do
+			if player.Ship.Thrusters[i].direction == "right" then
+				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
+	end
+	if love.keyboard.isDown('q') or love.keyboard.isDown('a') then
+		for i=1,#player.Ship.Engine.Thrusters do
+			if player.Ship.Engine.Thrusters[i].direction == "rotateleft" then
+				player.Ship.Engine.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
+	elseif love.keyboard.isDown('e') or love.keyboard.isDown('d') then
+		for i=1,#player.Ship.Engine.Thrusters do
+			if player.Ship.Engine.Thrusters[i].direction == "rotateright" then
+				player.Ship.Engine.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+			end
+		end
 	end
 
 	-- Fuel UI draw
@@ -150,4 +184,10 @@ function love.draw()
 	love.graphics.rectangle("line", 3, love.graphics.getHeight() - 13, 125, 10)
 	love.graphics.setColor(175, 255, 25) --change to be based on fuel amount
 	love.graphics.rectangle("fill", 4, love.graphics.getHeight() - 12, 120, 8) --max width is 123
+
+	-- Pink arc for debug purposes
+	---[[
+	love.graphics.setColor(255, 100, 100)
+	love.graphics.arc("fill", player.Ship.x, player.Ship.y, 3, 0, math.pi*2, 20)
+	--]]
 end
