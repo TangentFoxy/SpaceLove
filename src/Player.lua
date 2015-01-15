@@ -1,5 +1,4 @@
 local class = require "lib.middleclass"
-local Ship = require "Ship"
 
 local Player = class('Player')
 

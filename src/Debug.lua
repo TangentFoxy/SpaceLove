@@ -8,25 +8,27 @@ local debug = {
 	fuelNumber = "above",   -- (white) fuel/max fuel in numerical form
 }
 
-function Debug:drawAbove()
+function Debug:drawAbove(x, y)
 	for k,v in pairs(debug) do
 		if v == "above" then
-			Debug[k]()
+			Debug[k](x, y)
 		end
 	end
 end
 
-function Debug:drawBelow()
+function Debug:drawBelow(x, y)
 	for k,v in pairs(debug) do
 		if v == "below" then
-			Debug[k]()
+			Debug[k](x, y)
 		end
 	end
 end
 
-function Debug:hitRadius()
+function Debug:hitRadius(x, y)
 	love.graphics.setLineWidth(1)
 	love.graphics.setColor(255, 0, 255) -- as much as I love this orange: 188, 128, 90, THIS NEEDS TO STAND OUT
+	-- DOES NOT WORK FOR NO REASON
+	--love.graphics.arc("line", x + player.Ship.x, y + player.Ship.y, player.Ship.Hull.hitRadius, 0, math.pi*2, 20)
 	love.graphics.arc("line", player.Ship.x, player.Ship.y, player.Ship.Hull.hitRadius, 0, math.pi*2, 20)
 end
 
@@ -37,9 +39,9 @@ function Debug:middleLines()
 	love.graphics.line(0, love.graphics.getHeight() / 2, love.graphics.getWidth(), love.graphics.getHeight() / 2)
 end
 
-function Debug:playerCenter()
+function Debug:playerCenter(x, y)
 	love.graphics.setColor(255, 100, 100)
-	love.graphics.arc("fill", player.Ship.x, player.Ship.y, 3, 0, math.pi*2, 20)
+	love.graphics.arc("fill", x + player.Ship.x, y + player.Ship.y, 3, 0, math.pi*2, 20)
 end
 
 function Debug:fpsCounter()

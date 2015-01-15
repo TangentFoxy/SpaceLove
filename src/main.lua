@@ -7,14 +7,6 @@ console = {
 -- Camera (offset)
 local Camera = { x = 0, y = 0 }
 
--- Classes
-local Player = require "Player"
-local Ship = require "Ship"
-local Hull = require "Hull"
-local Shield = require "Shield"
-local Engine = require "Engine"
-local Thruster = require "Thruster"
-
 local Debug = require "Debug"
 
 -- GLOBALS
@@ -25,37 +17,7 @@ Render = {
 	hudFont = love.graphics.newFont("fonts/Audimat Mono Regular.ttf", 16),
 }
 
-player = Player(Ship(
-	Hull("images/fighter1.png", 1.5, 16, 10000),
-	Shield("images/shieldhit1.png", 1.6),
-	Engine(40000, 0.95, 10, 7.5, 33, 0.93, 0.5),
-	{
-		Thruster(1300, "forward", -8.5, 16.5, {160, 250, 255}, 2.4, 0.7),
-		Thruster(1300, "forward", 8.5, 16.5, {160, 250, 255}, 2.4, 0.7),
-		Thruster(650, "backward", -13, 1.8, {200, 240, 255}, 1.8, 0.8),
-		Thruster(650, "backward", 13, 1.8, {200, 240, 255}, 1.8, 0.8),
-		Thruster(320, "left", 6, -4.4, {220, 230, 250}, 0.6, 1),
-		Thruster(540, "left", 17.5, 5.5, {220, 230, 250}, 1.2, 0.9),
-		Thruster(320, "right", -6, -4.4, {220, 230, 250}, 0.6, 1),
-		Thruster(540, "right", -17.5, 5.5, {220, 230, 250}, 1.2, 0.9),
-		Thruster(90, "rotateleft", 4.4, -16, {250, 200, 200}, 0.4, 1.1),
-		Thruster(110, "rotateleft", -11, 14.3, {255, 230, 230}, 0.6, 1),
-		Thruster(110, "rotateleft", 13, 11, {250, 200, 200}, 0.6, 1),
-		Thruster(90, "rotateright", -4.8, -16, {250, 200, 200}, 0.4, 1.1),
-		Thruster(110, "rotateright", 10.4, 14.3, {255, 230, 230}, 0.6, 1),
-		Thruster(110, "rotateright", -13.6, 11, {250, 200, 200}, 0.6, 1),
-	},
-	{
-		x = love.graphics.getWidth() / 2,
-		y = love.graphics.getHeight() / 2,
-		v = {
-			x = 0,
-			y = 0
-		},
-		currentRotation = 0,
-		rotationSpeed = 0
-	}
-))
+player = require "Ships.Demo"
 
 function love.update(dt)
 	-- player rotation input
@@ -107,15 +69,9 @@ function love.update(dt)
 	player.Ship.y = player.Ship.y + player.Ship.v.y * dt
 
 	-- Camera position updated
-	local dx = (player.Ship.x - Camera.x - love.graphics.getWidth() / 2) / 10 --love.graphics.getWidth() --/ 2
-	local dy = (player.Ship.y - Camera.y - love.graphics.getHeight() / 2) / 10 --love.graphics.getHeight() --/ 2
-	--add min/max stuff here
-	if dx > love.graphics.getWidth() then
-		dx = love.graphics.getWidth() / 3
-	end
-	if dy > love.graphics.getHeight() then
-		dy = love.graphics.getHeight() / 3
-	end
+	local dx = (player.Ship.x + Camera.x - love.graphics.getWidth() / 2) * math.abs((player.Ship.x + Camera.x - love.graphics.getWidth() / 2) / love.graphics.getWidth() / 5)
+	local dy = (player.Ship.y + Camera.y - love.graphics.getHeight() / 2) * math.abs((player.Ship.y + Camera.y - love.graphics.getHeight() / 2) / love.graphics.getHeight() / 5)
+	--add min/max stuff here?
 	Camera.x = Camera.x - dx
 	Camera.y = Camera.y - dy
 
@@ -125,7 +81,7 @@ end
 
 function love.draw()
 	-- Debug below!
-	Debug:drawBelow()
+	Debug:drawBelow(Camera.x, Camera.y)
 
 	-- Ship draw
 	love.graphics.setColor(255, 255, 255)
@@ -143,39 +99,39 @@ function love.draw()
 	if love.keyboard.isDown('w') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "forward" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	elseif love.keyboard.isDown('s') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "backward" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	end
 	if love.keyboard.isDown('j') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "left" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	elseif love.keyboard.isDown('l') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "right" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	end
 	if love.keyboard.isDown('q') and player.Ship.Hull.fuelAmount > 0 or love.keyboard.isDown('a') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "rotateleft" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	elseif love.keyboard.isDown('e') and player.Ship.Hull.fuelAmount > 0 or love.keyboard.isDown('d') and player.Ship.Hull.fuelAmount > 0 then
 		for i=1,#player.Ship.Thrusters do
 			if player.Ship.Thrusters[i].direction == "rotateright" then
-				player.Ship.Thrusters[i]:draw(player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
+				player.Ship.Thrusters[i]:draw(Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock))
 			end
 		end
 	end
@@ -190,5 +146,5 @@ function love.draw()
 	love.graphics.rectangle("fill", 4, love.graphics.getHeight() - 12, player.Ship.Hull.fuelAmount / player.Ship.Hull.fuelCapacity * 123, 8) --max width is 123
 
 	-- Debug above!
-	Debug:drawAbove()
+	Debug:drawAbove(Camera.x, Camera.y)
 end
