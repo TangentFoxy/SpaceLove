@@ -4,6 +4,9 @@ console = {
 	d = function() end
 }
 
+-- Camera (offset)
+local Camera = { x = 0, y = 0 }
+
 -- Classes
 local Player = require "Player"
 local Ship = require "Ship"
@@ -103,6 +106,19 @@ function love.update(dt)
 	player.Ship.x = player.Ship.x + player.Ship.v.x * dt
 	player.Ship.y = player.Ship.y + player.Ship.v.y * dt
 
+	-- Camera position updated
+	local dx = (player.Ship.x - Camera.x - love.graphics.getWidth() / 2) / 10 --love.graphics.getWidth() --/ 2
+	local dy = (player.Ship.y - Camera.y - love.graphics.getHeight() / 2) / 10 --love.graphics.getHeight() --/ 2
+	--add min/max stuff here
+	if dx > love.graphics.getWidth() then
+		dx = love.graphics.getWidth() / 3
+	end
+	if dy > love.graphics.getHeight() then
+		dy = love.graphics.getHeight() / 3
+	end
+	Camera.x = Camera.x - dx
+	Camera.y = Camera.y - dy
+
 	-- emergency exit
 	if love.keyboard.isDown('escape') then love.event.quit() end
 end
@@ -114,9 +130,9 @@ function love.draw()
 	-- Ship draw
 	love.graphics.setColor(255, 255, 255)
 	if Render.jitter then
-		love.graphics.draw(player.Ship.Hull.image, player.Ship.x - (player.Ship.x % Render.jitterLevel), player.Ship.y - (player.Ship.y % Render.jitterLevel), player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
+		love.graphics.draw(player.Ship.Hull.image, math.floor(Camera.x) + player.Ship.x - (player.Ship.x % Render.jitterLevel), math.floor(Camera.y) + player.Ship.y - (player.Ship.y % Render.jitterLevel), player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
 	else
-		love.graphics.draw(player.Ship.Hull.image, player.Ship.x, player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
+		love.graphics.draw(player.Ship.Hull.image, Camera.x + player.Ship.x, Camera.y + player.Ship.y, player.Ship.currentRotation - (player.Ship.currentRotation % player.Ship.Engine.degreeLock), player.Ship.Hull.imgScale, player.Ship.Hull.imgScale, player.Ship.Hull.imgHalfWidth, player.Ship.Hull.imgHalfHeight)
 	end
 
 	-- Shield draw

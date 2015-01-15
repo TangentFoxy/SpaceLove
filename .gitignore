@@ -1,3 +1,7 @@
+# Custom shit
+builds/
+tmp/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
