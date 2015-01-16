@@ -18,6 +18,8 @@ Render = {
 }
 
 player = require "Ships.Demo"
+local Hat = require "Hat"
+local lolhat = Hat("images/hat1.png", 1.6, -20, {255, 255, 255})
 
 function love.update(dt)
 	-- player rotation input
@@ -135,6 +137,9 @@ function love.draw()
 			end
 		end
 	end
+
+	-- lolhat draw
+	lolhat:draw(Camera.x, Camera.y)
 
 	-- Fuel UI draw
 	love.graphics.setColor(175, 255, 255)
