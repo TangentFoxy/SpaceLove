@@ -1,5 +1,7 @@
 # Custom shit
-builds/
+!builds/
+builds/*
+!builds/build.number
 tmp/
 
 # Windows image file caches
